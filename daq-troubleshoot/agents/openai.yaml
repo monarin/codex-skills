@@ -1,0 +1,4 @@
+interface:
+  display_name: "DAQ Troubleshoot"
+  short_description: "Troubleshoot LCLS DAQ hutch nodes"
+  default_prompt: "Use $daq-troubleshoot to inspect DAQ logs and diagnose hutch daqmgr or Slurm launch issues."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Skill Management"
+  short_description: "Manage personal skills and symlinks"
+  default_prompt: "Use $codex-skill-management to update a personal Codex skill in ~/codex-skills and keep ~/.codex/skills symlinked."
