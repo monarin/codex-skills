@@ -1,0 +1,4 @@
+interface:
+  display_name: "psana"
+  short_description: "Work on LCLS2 psana user flows and internals"
+  default_prompt: "Use $psana to inspect psana DataSource, Run, SMD, EventBuilder, or BigData behavior in ~/lcls2."
