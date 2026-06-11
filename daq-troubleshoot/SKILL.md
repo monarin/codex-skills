@@ -38,11 +38,11 @@ For more path and command notes, see `references/hutch-nodes.md`.
 ## Log Inspection Workflow
 
 1. Confirm host, OS, and `$HOME`.
-2. Inspect only the requested log file or recent log names.
+2. Inspect only the requested log file or recent log names. For multi-process DAQ launches, group logs by the newest common timestamp and inspect `control`, `teb*`, `drp`/detector, and `meb*` logs from the same launch.
 3. Search logs for high-signal markers before reading large sections:
 
 ```bash
-grep -n -E '=====|SLURM_CPU_BIND|SLURM_JOB_ID|SLURM_STEP_ID|CPU binding|Unable to satisfy|srun:|error:' <log>
+grep -n -E '=====|SLURM_CPU_BIND|SLURM_JOB_ID|SLURM_STEP_ID|CPU binding|Unable to satisfy|srun:|error:|<E>|Phase [0-9] error|Failed to configure|Permission denied' <log>
 ```
 
 4. For daqmgr/daqstat restart failures, compare these phases:
@@ -52,6 +52,67 @@ grep -n -E '=====|SLURM_CPU_BIND|SLURM_JOB_ID|SLURM_STEP_ID|CPU binding|Unable t
 - `daqlog_header`: confirms the command, platform, host, and selected DAQ env subset.
 
 5. If the failure is `CPU binding outside of job step allocation`, look for inherited `SLURM_CPU_BIND`, `SLURM_CPU_BIND_LIST`, `SLURM_CPU_BIND_TYPE`, or `SLURM_CPU_BIND_VERBOSE` in the batch shell before `srun`.
+
+6. For state-change failures, start with `control.log` to identify the participant that failed, then inspect that participant's log. `control.log` may only say `teb0: Phase 1 error`; the actionable error is often earlier in `teb0.log`.
+
+7. Confirm config edits through `daqlog_header` in the latest process log. The `# CMDLINE:` lines show the actual command Slurm launched, including `-o`, `-k`, `-p`, and `-u` options.
+
+## TEB Configure / IPC Failures
+
+For CONFIGURED failures involving `teb0` and Python triggers:
+
+- `TebPyTrig` uses the trigger config's `pythonScript` plus the TEB `script_path` kwarg. If `-k script_path=...` is missing from the `teb` command, it defaults to `.` and may try to run `./tebIntegrateTest.py`.
+- Compare against a working config such as `~tmoopr/scripts/tmo_sc.py`: define `trig_dir`, `scripts = f'script_path={trig_dir}'`, and include `-k {scripts}` in the TEB command.
+- If Python starts but fails with `Error connecting to 'Results' message queue - Error: Permission denied`, check stale POSIX IPC files on the TEB host:
+
+```bash
+ssh <control-host> 'ssh <teb-host> "ls -l /dev/mqueue/mqteb*p<platform>_teb<teb-id> /dev/shm/shmteb*p<platform>_teb<teb-id> 2>/dev/null"'
+```
+
+- DAQ queue names such as `/dev/mqueue/mqtebres_p0_teb0` are local to the node and keyed by partition/platform and TEB id, not by hutch or user. Different hutches on different hosts can have the same queue name safely; different users on the same host and same `-p`/`-u` collide.
+- Before removing stale IPC state, verify no process is using it: check Slurm jobs on that node, `ps -u <owner>`, and `/proc/*/fd` symlinks for the queue name. Stop the failed DAQ instance before removing queues or shared memory.
+
+## DRP Output Path Checks
+
+- Verify DRP output paths on the Slurm execution host, not only on the control host.
+- For `drp -P <hutch> -o <data_dir>`, the effective directory checked by the DRP is typically `<data_dir>/<hutch>`.
+- If the DRP logs `stat(<path>) error: No such file or directory`, confirm each parent directory and permissions from the DRP host.
+- `Inadequate RTPRIO limit` can appear as `<C>` while the process continues to transitions; do not assume it is the blocking error unless the log stops there.
+
+## PVA Detector Damage
+
+For `drp_pva` detectors with high damage rates:
+
+- Identify the exact launch group first. A detector alias can reuse the same Prometheus instance across quick restarts, so group `control`, `teb*`, and detector logs by the common timestamp before attributing metrics to a run.
+- Use `control.log` and `teb*.log` to confirm whether the detector was actually selected in the relevant configuration. TEB contributor counts can change across repeated configure attempts in one log group, and a detector may appear only in a later configuration.
+- Check Prometheus target availability before interpreting gaps:
+
+```promql
+up{instance="<host>:<prometheus-port>"}
+```
+
+- Get the numeric damage code from the damage-type histogram. `DRP_DamageType_count` is the number of damage-code observations, and `DRP_DamageType_sum` is the sum of the numeric damage codes. For a window where one code dominates:
+
+```promql
+increase(DRP_DamageType_sum{alias="<alias>"}[40s])
+/
+increase(DRP_DamageType_count{alias="<alias>"}[40s])
+```
+
+- Cross-check the code mapping in `xtcdata/xtcdata/xtc/Damage.hh`; common PVA cases include `MissingData = 5` and `TimedOut = 6`.
+- Correlate with PVA-specific counters:
+
+```promql
+DRP_Damage{alias="<alias>"}
+drp_event_rate{alias="<alias>"}
+drp_update_rate{alias="<alias>"}
+drp_empty_count{alias="<alias>"}
+drp_tooOld_count{alias="<alias>"}
+drp_timeout_count{alias="<alias>"}
+```
+
+- If `drp_event_rate` is near 120 Hz, `drp_update_rate` is near 60 Hz, `DRP_Damage` rises near 60 Hz, `drp_empty_count` rises, and `drp_timeout_count` stays flat, report this as `MissingData` from unmatched PVA updates rather than a TEB timeout.
+- If `drp_timeout_count` rises with `DRP_Damage`, report a `TimedOut` component and separate it from any earlier `MissingData` burst.
 
 ## daqmgr Env Debug Gate
 
