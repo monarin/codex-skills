@@ -1,0 +1,4 @@
+interface:
+  display_name: "Playwright Mac Browser"
+  short_description: "Connect Codex on remote hosts to Mac Chrome"
+  default_prompt: "Use $playwright-mac-browser to set up Playwright access from this remote Codex session to my Mac Chrome."
