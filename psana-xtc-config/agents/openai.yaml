@@ -1,0 +1,5 @@
+interface:
+  display_name: "psana XTC Configure"
+  short_description: "Trace xtc2 Configure and event metadata"
+  default_prompt: "Use $psana-xtc-config to explain how Configure Names and event ShapesData map detector segments and payload bytes."
+
