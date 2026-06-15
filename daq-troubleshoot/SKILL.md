@@ -1,6 +1,6 @@
 ---
 name: daq-troubleshoot
-description: Use when troubleshooting LCLS DAQ hutch operations on production hutch DAQ nodes, including daqmgr/daqstat restart issues, Slurm job launch failures, CPU binding/environment leaks, DAQ process logs, and hutch operator account context for tmo, fix, txi, ued, mfx, or xpp.
+description: Use when troubleshooting LCLS DAQ hutch operations on production hutch DAQ nodes, including daqmgr/daqstat restart issues, Slurm job launch failures, CPU binding/environment leaks, DAQ process logs, TPR/XPM timing trigger routing for hutch cameras, and hutch operator account context for tmo, fix, txi, ued, mfx, or xpp.
 ---
 
 # DAQ Troubleshoot
@@ -34,6 +34,27 @@ ssh mfx-daq -l mfxopr 'ls -lt "$HOME"/daq/logs/*/* 2>/dev/null | head'
 Rocky 9 hutches have home/log files under `/sdf`; RHEL7 hutches have files under `/cds`. Always confirm with `echo "$HOME"` and `cat /etc/os-release` instead of hard-coding paths.
 
 For more path and command notes, see `references/hutch-nodes.md`.
+
+## TPR / XPM Timing Trigger Checks
+
+Use `references/tpr-xpm-timing.md` when a hutch camera or detector depends on
+TPR/EVR-style external triggers, when comparing TPR to XPM timing, or when
+debugging whether a camera should be connected through a TPR trigger output.
+
+Read-only checks first. Do not change TPR trigger PVs, XPM settings, or camera
+trigger modes on a production hutch unless Mona explicitly grants permission in
+the current turn.
+
+Quick model:
+
+- XPM is upstream timing/readout-group control.
+- TPR is an endpoint/adapter that receives LCLS timing frames and emits local
+  hardware trigger pulses.
+- Cameras such as Andor, CCD, and controls cameras often need TPR because they
+  only accept an external trigger pulse, not the LCLS timing protocol.
+- ePixQuad, Jungfrau, and some Piranha deployments appear "direct" because
+  their SLAC/KCU/CameraLink gateway electronics already contain a timing
+  receiver and trigger-event manager.
 
 ## Log Inspection Workflow
 
