@@ -1,6 +1,6 @@
 ---
 name: daq-troubleshoot
-description: Use when troubleshooting LCLS DAQ hutch operations on production hutch DAQ nodes, including daqmgr/daqstat restart issues, Slurm job launch failures, CPU binding/environment leaks, DAQ process logs, TPR/XPM timing trigger routing for hutch cameras, and hutch operator account context for tmo, fix, txi, ued, mfx, or xpp.
+description: Use when troubleshooting LCLS DAQ hutch operations on production hutch DAQ nodes, including daqmgr/daqstat restart issues, Slurm job launch failures, CPU binding/environment leaks, DAQ process logs, TPR/XPM timing trigger routing for hutch cameras, EPICS CA/PVA camera PV discovery or drp_pva damage, and hutch operator account context for tmo, fix, txi, ued, mfx, or xpp.
 ---
 
 # DAQ Troubleshoot
@@ -55,6 +55,17 @@ Quick model:
 - ePixQuad, Jungfrau, and some Piranha deployments appear "direct" because
   their SLAC/KCU/CameraLink gateway electronics already contain a timing
   receiver and trigger-event manager.
+
+## EPICS CA/PVA Camera PV Checks
+
+Use `references/epics-ca-pva-camera.md` when debugging `drp_pva` camera/PV
+recording, CA versus PVA provider selection, `EPICS_CA_ADDR_LIST` or
+`EPICS_PVA_ADDR_LIST` values, gateway bypass, multi-IOC host discovery issues,
+or `/cds/group/pcds/dist/pds/boot/epics-ca-unicast-fix.sh`.
+
+Read-only checks first. Do not change IOC startup scripts, iptables rules,
+EPICS gateway routing, or live DAQ configs on production hosts unless Mona
+explicitly grants permission in the current turn.
 
 ## Log Inspection Workflow
 
