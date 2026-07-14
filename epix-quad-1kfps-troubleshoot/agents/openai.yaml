@@ -1,0 +1,4 @@
+interface:
+  display_name: "ePix Quad 1kfps Troubleshoot"
+  short_description: "UED ePixQuad1kfps DAQ diagnosis"
+  default_prompt: "Use $epix-quad-1kfps-troubleshoot to diagnose a UED ePixQuad1kfps DAQ startup or missing-data issue."

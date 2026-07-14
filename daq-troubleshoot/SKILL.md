@@ -35,6 +35,23 @@ Rocky 9 hutches have home/log files under `/sdf`; RHEL7 hutches have files under
 
 For more path and command notes, see `references/hutch-nodes.md`.
 
+## Detector-Specific Overlays
+
+When troubleshooting a named detector, use this skill as the primary workflow.
+Also use any detector-specific skill whose description matches the detector name
+or aliases. Apply the detector skill after Step 0 log discovery to interpret
+detector-specific logs, config paths, firmware state, and known failure modes.
+Do not let detector-specific guidance override production safety rules.
+
+## Priority Troubleshooting Order
+
+Use this order unless the user explicitly asks for a narrower check.
+
+- Step 0 - Locate the detector logs first. Given a hutch three-letter code, use the `<hutch>opr` account and search the hutch operator home for the detector's unique name. Logs may be under date-based paths such as `$HOME/YYYY/MM/DD*<unique_det_name>*` or under `$HOME/daq/logs`. Group logs by the newest common timestamp before interpreting errors. Inspect the detector/DRP log, `control.log`, and `teb*` logs from the same launch; establish whether the TEB is happy or reports related missing source, timeout, phase, IPC, or write failures before moving on.
+- Step 1 - Check the detector node health. Identify the node connected to the detector from the logs or config. Verify read-only that Slurm does not show the node in `DRAIN`, `DOWN`, or another bad state; the host is reachable; the node is alive enough to answer basic read-only commands; and the expected filesystem is mounted (`/cds` or `/sdf`, depending on the hutch).
+- Step 2 - Check timing only after log and node evidence. Use the TPR/XPM timing guidance below when the logs point to missing triggers, event counter jumps, stale timestamps, partition/readout-group mismatch, timing link trouble, or detector trigger routing questions.
+- Step 3 - Summarize the errors. Separate observations from inferences, include exact log paths and line numbers, call out TEB status, detector node health, timing findings, and the smallest proposed next check or fix.
+
 ## TPR / XPM Timing Trigger Checks
 
 Use `references/tpr-xpm-timing.md` when a hutch camera or detector depends on
@@ -69,25 +86,26 @@ explicitly grants permission in the current turn.
 
 ## Log Inspection Workflow
 
-1. Confirm host, OS, and `$HOME`.
-2. Inspect only the requested log file or recent log names. For multi-process DAQ launches, group logs by the newest common timestamp and inspect `control`, `teb*`, `drp`/detector, and `meb*` logs from the same launch.
-3. Search logs for high-signal markers before reading large sections:
+1. Start from the detector alias or unique detector name. Search the hutch operator home under date-based paths such as `$HOME/YYYY/MM/DD*<unique_det_name>*` and under `$HOME/daq/logs`.
+2. For multi-process DAQ launches, group logs by the newest common timestamp and inspect `control`, `teb*`, `drp`/detector, and `meb*` logs from the same launch.
+3. Check `teb*` and detector logs first for missing sources, timeouts, phase errors, event counter jumps, IPC failures, or write failures. Use `control.log` to identify which participant failed when state changes fail.
+4. Search logs for high-signal markers before reading large sections:
 
 ```bash
 grep -n -E '=====|SLURM_CPU_BIND|SLURM_JOB_ID|SLURM_STEP_ID|CPU binding|Unable to satisfy|srun:|error:|<E>|Phase [0-9] error|Failed to configure|Permission denied' <log>
 ```
 
-4. For daqmgr/daqstat restart failures, compare these phases:
+5. For daqmgr/daqstat restart failures, compare these phases:
 
 - Batch shell before `srun`: should not contain stale `SLURM_CPU_BIND*` from a parent job.
 - Step shell after `srun`: may contain Slurm-assigned `SLURM_CPU_BIND*`, `SLURM_STEP_ID=0`, and the new job ID.
 - `daqlog_header`: confirms the command, platform, host, and selected DAQ env subset.
 
-5. If the failure is `CPU binding outside of job step allocation`, look for inherited `SLURM_CPU_BIND`, `SLURM_CPU_BIND_LIST`, `SLURM_CPU_BIND_TYPE`, or `SLURM_CPU_BIND_VERBOSE` in the batch shell before `srun`.
+6. If the failure is `CPU binding outside of job step allocation`, look for inherited `SLURM_CPU_BIND`, `SLURM_CPU_BIND_LIST`, `SLURM_CPU_BIND_TYPE`, or `SLURM_CPU_BIND_VERBOSE` in the batch shell before `srun`.
 
-6. For state-change failures, start with `control.log` to identify the participant that failed, then inspect that participant's log. `control.log` may only say `teb0: Phase 1 error`; the actionable error is often earlier in `teb0.log`.
+7. For state-change failures, start with `control.log` to identify the participant that failed, then inspect that participant's log. `control.log` may only say `teb0: Phase 1 error`; the actionable error is often earlier in `teb0.log`.
 
-7. Confirm config edits through `daqlog_header` in the latest process log. The `# CMDLINE:` lines show the actual command Slurm launched, including `-o`, `-k`, `-p`, and `-u` options.
+8. Confirm config edits through `daqlog_header` in the latest process log. The `# CMDLINE:` lines show the actual command Slurm launched, including `-o`, `-k`, `-p`, and `-u` options.
 
 ## TEB Configure / IPC Failures
 
