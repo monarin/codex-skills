@@ -190,6 +190,71 @@ squeue -u <hutch>opr
 
 Do not run `scancel`, `sbatch`, or live `daqmgr` mutations without explicit permission.
 
+## Slurm Configless / PMIx Package Drift
+
+Use this when `restartdaq`, `daqmgr`, `daqstat`, `squeue`, `scontrol`, `sbatch`,
+or `srun` behave as if Slurm is up but pointed at the wrong controller, or when
+some DAQ jobs launch on other nodes while jobs on the hutch DAQ host fail.
+
+Known failure pattern:
+
+- IT kernel or OS maintenance can pull in an incompatible Slurm RPM for a hutch
+  DAQ node.
+- The wrong package can install a stale static `/etc/slurm/slurm.conf` on a
+  node that should be using configless Slurm from `psslurm-drp`.
+- Plain Slurm clients then read `/etc/slurm/slurm.conf` instead of the runtime
+  configless cache under `/run/slurm/conf/slurm.conf`, so `squeue`/`scontrol`
+  can fail or report the wrong controller even while `slurmd` is running.
+- The same wrong Slurm package may omit `mpi/pmix`. Jobs on other DRP nodes can
+  still run, but jobs scheduled on the affected hutch DAQ host fail before the
+  DAQ process starts with errors like:
+
+```text
+srun: error: Couldn't find the specified plugin name for mpi/pmix
+srun: error: cannot find mpi plugin for mpi/pmix
+srun: error: invalid MPI type 'pmix'
+```
+
+Read-only checks:
+
+```bash
+ssh <hutch>-daq -l <hutch>opr 'hostname; srun --version; srun --mpi=list'
+ssh <hutch>-daq -l <hutch>opr 'rpm -qa | grep -E "^slurm|^pmix" | sort'
+ssh <hutch>-daq -l <hutch>opr 'ls -l /etc/slurm/slurm.conf /run/slurm/conf/slurm.conf /var/spool/slurmd/conf-cache/slurm.conf 2>/dev/null'
+ssh <hutch>-daq -l <hutch>opr 'scontrol ping'
+ssh <hutch>-daq -l <hutch>opr 'SLURM_CONF=/run/slurm/conf/slurm.conf scontrol ping'
+ssh <hutch>-daq -l <hutch>opr 'ls -l /usr/lib64/slurm/mpi_pmix* 2>/dev/null'
+```
+
+Compare against a known-good hutch DAQ node such as `tmo-daq` or `mfx-daq`.
+A healthy configless RHEL7 hutch node may have no `/etc/slurm/slurm.conf`, a
+working `/run/slurm/conf/slurm.conf`, and `srun --mpi=list` should include
+`pmix`/`pmix_v3` when DAQ commands use PMIx.
+
+Interpretation:
+
+- If `scontrol ping` fails but `SLURM_CONF=/run/slurm/conf/slurm.conf scontrol
+  ping` works, suspect a stale static `/etc/slurm/slurm.conf`.
+- If `srun --mpi=list` lacks `pmix`/`pmix_v3`, and logs for jobs on the DAQ host
+  show `invalid MPI type 'pmix'`, suspect an incompatible Slurm package build.
+- `rpm -qi slurm` and `stat /etc/slurm/slurm.conf` can show when the package and
+  static config appeared. Matching times shortly before a reboot suggest package
+  installation/config management, not `slurmd` configless startup, created the
+  stale file.
+
+Correct fix:
+
+- Do not treat setting `SLURM_CONF=/run/slurm/conf/slurm.conf` in DAQ commands
+  as the permanent fix; it is a diagnostic or temporary workaround.
+- Ask IT/root to remove or fix stale `/etc/slurm/slurm.conf` on configless nodes.
+- Ask IT/root to install the site-compatible Slurm package set for the hutch
+  nodes, including PMIx plugin support. As of the RIX 2026-07 incident, working
+  peers used `slurm-20.11.3-1.el7_9` with `mpi_pmix.so`/`mpi_pmix_v3.so`; in the
+  future, compare with a currently working DAQ node rather than hard-coding that
+  version.
+- After package/config repair, verify `squeue`, `scontrol ping`, `srun
+  --mpi=list`, and `daqutils --cnf <config.py> wheredaq` before restarting DAQ.
+
 ## Reporting
 
 When summarizing, include:
