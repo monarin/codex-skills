@@ -1,0 +1,4 @@
+interface:
+  display_name: "psana on Perlmutter"
+  short_description: "Build and run psana on Perlmutter"
+  default_prompt: "Use $psana-perlmutter to build, activate, verify, or run psana on NERSC Perlmutter."
