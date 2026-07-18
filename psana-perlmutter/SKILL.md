@@ -5,7 +5,7 @@ description: Build, activate, verify, and run Mona's lcls2/psana checkout on NER
 
 # psana on Perlmutter
 
-Use this for `/global/homes/m/monarin/lcls2` on NERSC Perlmutter. Prefer the local helper scripts and verify the active import path after every install.
+Use this for `/global/homes/m/monarin/lcls2` and its linked worktrees on NERSC Perlmutter. Prefer the local helper scripts and verify the active import path after every install.
 
 ## Build Environment
 
@@ -23,7 +23,7 @@ Do not activate an older psana install before building unless the build explicit
 
 ## Preferred Build
 
-Use the Perlmutter-specific minimal builder. It installs into the same prefix used by `activate_psana`:
+Use the checkout-local Meson builder. It configures the root Meson project with `build_daq=false`, hides `nvcc` by default, and installs into the same checkout-local prefix used at runtime:
 
 ```bash
 cd ~/lcls2
@@ -32,36 +32,67 @@ source ~/psana-nersc/activate_psana_build_env.sh ~/.conda-envs/psana-build
 ./build_psana.sh -j 8
 ```
 
-Default install prefix:
+Default paths:
 
 ```text
-~/lcls2/install_psana
+<checkout>/builddir_psana
+<checkout>/install_psana
 ```
 
-`build_psana.sh` builds the required xtcdata/psana components without pulling in unrelated full-tree CUDA subprojects. Inspect `./build_psana.sh --help` before using optional flags.
+The Meson configuration includes the active conda environment's headers for dependencies such as RapidJSON. Inspect `./build_psana.sh --help` before using optional flags.
 
-Use `./build_psana.sh --clean -j 8` only when stale or incompatible native build products require it. `--clean` removes the active `install_psana`, `xtcdata/build_psana`, and `psalg/build_psana` before rebuilding, so confirm the command and preserve a working runtime when build success is uncertain.
+Useful options:
 
-The current script does not implement `--python-only`, even though an older NERSC README mentions it. Do not use that option unless `./build_psana.sh --help` lists it.
+- `--clean`: remove the selected `install_psana` and `builddir_psana`, then configure and rebuild. Use this after moving a worktree, changing the prefix/build directory, or making incompatible native/build-metadata changes.
+- `--python-only`: skip Meson configure/compile/install and refresh only the installed Python package. It requires an existing build directory and install tree; do not combine it with `--clean`.
+- `--build-dir DIR`: select a different Meson build directory.
+- `--with-cuda`: allow `nvcc` detection and CUDA subprojects. The default deliberately removes `nvcc` from the build `PATH` to avoid unrelated CUDA builds.
+- `--build-type TYPE`: select `debug`, `debugoptimized`, `release`, `minsize`, or `plain`.
+
+The legacy `--build-list` and `--with-psalg` options are accepted only for compatibility and are ignored by the Meson flow.
+
+## Multiple Worktrees
+
+Build from inside each checkout so its build and install prefixes remain isolated:
+
+```bash
+cd ~/lcls2
+./build_psana.sh -j 8
+
+cd ~/lcls2_worktree/features/psana2-gpu-eb-topology-bench
+./build_psana.sh -j 8
+```
+
+Do not share `builddir_psana` or `install_psana` between worktrees. Meson records absolute source, build, and install paths.
+
+For the current GPU worktree workflow, use the checkout-aware activation helper:
+
+```bash
+# ~/lcls2
+source ~/activate_psana_gpu.sh
+
+# ~/lcls2_worktree/features/psana2-gpu-eb-topology-bench
+source ~/activate_psana_gpu.sh features/psana2-gpu-eb-topology-bench
+```
+
+The `activate_psana` function in `~/goodstuffs/bashrc` is appropriate only for the default `~/lcls2` checkout because it hardcodes `~/lcls2/install_psana`.
 
 ## Avoid Full-Tree Prefix Mismatches
 
 Do not use root `./build_all.sh` as the default Perlmutter psana installer:
 
-- Without `TESTRELDIR`, it installs into `~/lcls2/install`, while `activate_psana` loads `~/lcls2/install_psana`.
-- An existing Meson `builddir` retains the prefix from its original configuration; changing `TESTRELDIR` alone does not redirect `meson install`.
-- A force-clean full-tree build has been observed to fail in the unrelated `cusz` CUDA subproject because it configured `sm_52` and compiled double `atomicAdd`.
+- Without `TESTRELDIR`, it installs into `~/lcls2/install`, while the psana activation helpers load `install_psana`.
+- An existing Meson build directory retains the prefix from its original configuration; changing an environment variable alone does not redirect `meson install`.
+- A force-clean full-tree CUDA build has been observed to fail in the unrelated `cusz` subproject because it configured `sm_52` and compiled double `atomicAdd`.
 
-Use `build_all.sh` only when a task explicitly needs the full lcls2 Meson tree. Before doing so, inspect its install prefix, the configured Meson prefix, and the current CUDA subproject configuration. Never treat a successful build as proof that the runtime prefix was updated.
+Use `build_all.sh` only when a task explicitly needs the full lcls2/psdaq/CUDA tree. The checkout-local `build_psana.sh` is also Meson-based, but it sets `build_daq=false` and suppresses CUDA discovery unless `--with-cuda` is explicitly requested.
 
 ## Verify the Active Runtime
 
-After building, activate and inspect the runtime:
+After building the default checkout:
 
 ```bash
-source ~/goodstuffs/bashrc
-source ~/psana-nersc/activate_psana_build_env.sh ~/.conda-envs/psana-build
-activate_psana
+source ~/activate_psana_gpu.sh
 
 python - <<'PY'
 import psana
@@ -72,20 +103,11 @@ print("datasource:", psana.datasource.__file__)
 PY
 ```
 
-Accept the intended checkout's editable source path or `~/lcls2/install_psana`. Reject `~/lcls2/install`, another checkout, or an unexpected environment. When validating a change, also exercise the changed behavior; timestamps and build success alone are insufficient.
+For a named worktree, pass its full branch name to `activate_psana_gpu.sh` first. Accept only the intended checkout's `install_psana`. Reject `~/lcls2/install`, another checkout, or an unexpected environment. When validating a change, also exercise the changed behavior; timestamps and build success alone are insufficient.
 
 ## GPU Runtime Environment
 
-For GPU jobs, activate the CuPy CUDA shim after psana:
-
-```bash
-source ~/goodstuffs/bashrc
-source ~/psana-nersc/activate_psana_build_env.sh ~/.conda-envs/psana-build
-activate_psana
-activate_psana2_gpu_cupy
-```
-
-Before a benchmark, verify the environment on a GPU compute node:
+`activate_psana_gpu.sh` activates both the selected psana install and the CuPy CUDA shim. Before a benchmark, verify the environment on a GPU compute node:
 
 ```bash
 python - <<'PY'
@@ -134,7 +156,13 @@ export LCLS_CALIB_HTTP=https://pswww.slac.stanford.edu/calib_ws/
 
 ## Rebuild Decision
 
-Rebuild when changed code is imported from an installed copy, compiled extensions changed, build metadata changed, or the run uses another checkout. First inspect `psana.__file__`, the wrapper target, and the active prefix.
+Rebuild when compiled extensions, Meson files, packaging metadata, the checkout, build directory, or install prefix changes.
+
+- For compatible pure-Python/package changes with an existing native build, use `./build_psana.sh --python-only -j 8`.
+- For native-source changes, run `./build_psana.sh -j 8`.
+- For incompatible native/build-metadata changes or a relocated worktree, use `./build_psana.sh --clean -j 8`.
+
+Always inspect `psana.__file__`, the wrapper target, and the active prefix after rebuilding.
 
 A source-tree script executed directly does not require a rebuild when all of its imports resolve to the intended runtime. For example, `psana/psana/gpu/multiowner/run_nsys_gpu_context_overlap.sh` runs:
 
