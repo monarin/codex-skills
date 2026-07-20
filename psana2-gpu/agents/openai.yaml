@@ -1,0 +1,4 @@
+interface:
+  display_name: "psana2 GPU"
+  short_description: "Design and validate psana2 GPU data paths"
+  default_prompt: "Use $psana2-gpu to design, inspect, or validate the psana2 GPU architecture and implementation."
