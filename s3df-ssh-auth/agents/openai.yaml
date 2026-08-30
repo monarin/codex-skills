@@ -1,0 +1,4 @@
+interface:
+  display_name: "S3DF SSH Auth"
+  short_description: "Refresh and verify S3DF SSH access"
+  default_prompt: "Use $s3df-ssh-auth to refresh my S3DF registration and verify psbuildrc and sdfiana."

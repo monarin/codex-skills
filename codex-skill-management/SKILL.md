@@ -36,12 +36,20 @@ mkdir -p "$HOME/.codex/skills"
 ln -s "$HOME/codex-skills/codex-skill-management" "$HOME/.codex/skills/codex-skill-management"
 ```
 
-4. Symlink each remaining personal skill from the repo:
+4. Symlink every remaining personal skill from the repo. Stop rather than
+   replacing an existing non-symlink directory:
 
 ```bash
-ln -s "$HOME/codex-skills/daq-troubleshoot" "$HOME/.codex/skills/daq-troubleshoot"
-ln -s "$HOME/codex-skills/gpu-cuda-python" "$HOME/.codex/skills/gpu-cuda-python"
-ln -s "$HOME/codex-skills/slac-slack-mcp" "$HOME/.codex/skills/slac-slack-mcp"
+for skill_path in "$HOME/codex-skills"/*; do
+    [ -f "$skill_path/SKILL.md" ] || continue
+    skill_name="$(basename "$skill_path")"
+    target="$HOME/.codex/skills/$skill_name"
+    if [ -e "$target" ] && [ ! -L "$target" ]; then
+        echo "Refusing to replace $target" >&2
+        exit 1
+    fi
+    ln -sfn "$skill_path" "$target"
+done
 ```
 
 5. Restart Codex so skill discovery reloads.
@@ -49,7 +57,7 @@ ln -s "$HOME/codex-skills/slac-slack-mcp" "$HOME/.codex/skills/slac-slack-mcp"
 6. Verify the install:
 
 ```bash
-find "$HOME/.codex/skills" -maxdepth 1 -mindepth 1 -printf '%y %p -> %l\n' | sort
+find "$HOME/.codex/skills" -maxdepth 1 -mindepth 1 -type l -exec ls -ld {} \; | sort
 git -C "$HOME/codex-skills" status --short --branch
 ```
 
