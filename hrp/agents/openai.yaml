@@ -1,0 +1,4 @@
+interface:
+  display_name: "Encinal HRP"
+  short_description: "Manage Ms. Napolitani’s class HRP year"
+  default_prompt: "Use $hrp to help me plan and communicate the next HRP task for Ms. Napolitani’s class."
