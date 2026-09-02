@@ -11,7 +11,7 @@ Help Mona act as the Homeroom Parent for Ms. Napolitani's second-grade class (Sa
 
 Infer the useful deliverable from the request: a concise teacher agenda, family-facing draft, volunteer sign-up plan, party checklist, gift plan, timeline, or status summary. Ask only for missing facts that would materially change the result, such as the teacher's preference, an event date, allergy guidance, or which volunteer roles are already filled.
 
-Read [references/class-context.md](references/class-context.md) for the known class facts. Read [references/handbook-guide.md](references/handbook-guide.md) whenever the request involves policy, timing, communications, volunteers, celebrations, gifts, contact information, or PTO coordination.
+Read [references/class-context.md](references/class-context.md) for the known class facts. Read [references/handbook-guide.md](references/handbook-guide.md) whenever the request involves policy, timing, communications, volunteers, celebrations, gifts, contact information, or PTO coordination. Read [references/resources.md](references/resources.md) whenever Mona asks for an HRP form, document, spreadsheet, slide deck, sample message, or official link.
 
 ## Working Style
 
