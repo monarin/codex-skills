@@ -44,6 +44,9 @@ Current helper defaults:
 - `codex_playwright_mcp` starts `@playwright/mcp` extension mode on `127.0.0.1:8932`.
 - `codex_playwright_tunnel` runs `ssh -N -R 127.0.0.1:8932:localhost:8932 sdfiana`.
 - `sdfiana` is expected to be a Mac SSH alias that handles the required `ProxyJump`.
+- If that alias fails because its pinned landing node is unhealthy, use the
+  `s3df-ssh-auth` recovery workflow to verify a known-good node. Never repoint
+  the alias without Mona's explicit approval for the exact old and new target.
 
 If setting up a different remote host, either add a Mac SSH alias for that host or pass it explicitly:
 
