@@ -1,0 +1,4 @@
+interface:
+  display_name: "SSH Connections"
+  short_description: "Manage Mona’s S3DF and NERSC SSH access"
+  default_prompt: "Use $ssh-connections to configure or repair my S3DF and Perlmutter SSH access."

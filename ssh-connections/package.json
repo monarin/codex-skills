@@ -1,0 +1,12 @@
+{
+  "name": "codex-skill-ssh-connections",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "s3df:key-refresh": "bash ./scripts/s3df-key-refresh.sh",
+    "s3df:key-submit": "node ./scripts/s3df-submit-key.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.61.1"
+  }
+}

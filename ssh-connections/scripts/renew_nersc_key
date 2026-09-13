@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+nersc_user="${NERSC_USER:-monarin}"
+use_fedid=0
+verify=1
+
+usage() {
+  cat <<'EOF'
+Usage: renew_nersc_key [--fedid] [--no-verify]
+
+Generate ~/.ssh/nersc with NERSC sshproxy, then verify the perlmutter alias.
+Set NERSC_USER to override the default username, monarin.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --fedid)
+      use_fedid=1
+      ;;
+    --no-verify)
+      verify=0
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+if [[ "$(uname -s)" != "Darwin" ]]; then
+  echo "renew_nersc_key must run on Mona's local Mac." >&2
+  exit 1
+fi
+
+if ! command -v sshproxy >/dev/null 2>&1; then
+  echo "sshproxy is not installed. Use the signed macOS package from https://docs.nersc.gov/connect/mfa/." >&2
+  exit 1
+fi
+
+if [[ "$use_fedid" -eq 1 ]]; then
+  sshproxy -f -o nersc
+else
+  sshproxy -u "$nersc_user" -o nersc
+fi
+
+chmod 600 "$HOME/.ssh/nersc" 2>/dev/null || true
+
+if [[ "$verify" -eq 1 ]]; then
+  ssh \
+    -o BatchMode=yes \
+    -o NumberOfPasswordPrompts=0 \
+    -o ConnectTimeout=20 \
+    -o ConnectionAttempts=1 \
+    -o ControlMaster=no \
+    -o ControlPath=none \
+    perlmutter true
+  echo "Checking perlmutter... OK"
+fi

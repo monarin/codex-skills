@@ -1,0 +1,102 @@
+Include ~/.ssh/s3df/s3df.conf
+
+
+# BEGIN Codex S3DF automation hardening
+# Noninteractive clients must never fall back to password or keyboard-interactive prompts.
+Host s3dflogin s3dflogin.slac.stanford.edu sdflogin sdflogin002 sdflogin002.slac.stanford.edu sdfiana sdfiana002 psbuildrc psbuild-rocky9 psbuild-rocky9-01 drp-srcf-gpu003
+  BatchMode yes
+  PreferredAuthentications publickey
+  PasswordAuthentication no
+  KbdInteractiveAuthentication no
+  NumberOfPasswordPrompts 0
+  ConnectionAttempts 1
+# END Codex S3DF automation hardening
+
+Host sdflogin sdflogin002 sdflogin002.slac.stanford.edu
+  HostName sdflogin002.slac.stanford.edu
+  User monarin
+  ForwardX11 yes
+  ForwardX11Trusted yes
+  ControlPath ~/.ssh/controlmasters/%C
+  ControlMaster auto
+  ControlPersist 8h
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+
+Host sdfiana
+  HostName sdfiana025
+  User monarin
+  ProxyJump sdflogin
+  ForwardX11 yes
+  ForwardX11Trusted yes
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+
+Host github.com
+  AddKeysToAgent yes
+  IdentityFile ~/.ssh/id_ed25519
+
+Host jump jump.slac.stanford.edu
+  HostName jump.slac.stanford.edu
+  User monarin
+  ControlPath ~/.ssh/controlmasters/%C
+  ControlMaster auto
+  ControlPersist 8h
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+
+Host psbuildrh psbuild-rhel7 psbuild-rhel7-01
+  HostName psbuild-rhel7-01
+  User monarin
+  ProxyJump jump
+  ForwardX11 yes
+  ForwardX11Trusted yes
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+
+Host psbuildrc psbuild-rocky9 psbuild-rocky9-01
+  HostName psbuild-rocky9-01
+  User monarin
+  ProxyJump sdflogin
+  ForwardX11 yes
+  ForwardX11Trusted yes
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+
+Host drp-srcf-gpu003
+  HostName drp-srcf-gpu003
+  User monarin
+  ProxyJump psbuildrc
+  ForwardX11 yes
+  ForwardX11Trusted yes
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+
+Host perlmutter
+  HostName perlmutter.nersc.gov
+  LogLevel QUIET
+  IdentityFile ~/.ssh/nersc
+  IdentitiesOnly yes
+  ForwardAgent yes
+  ControlPath ~/.ssh/controlmasters/%C
+  ControlMaster auto
+  ControlPersist 8h
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+  # User YOUR_NERSC_USERNAME
+
+Host dtn
+  HostName dtn.nersc.gov
+  LogLevel QUIET
+  IdentityFile ~/.ssh/nersc
+  IdentitiesOnly yes
+  ForwardAgent yes
+  # User YOUR_NERSC_USERNAME
+
+Host nid??????
+  LogLevel QUIET
+  IdentityFile ~/.ssh/nersc
+  StrictHostKeyChecking no
+  ProxyJump perlmutter.nersc.gov
+  HostName %h
+  # User YOUR_NERSC_USERNAME

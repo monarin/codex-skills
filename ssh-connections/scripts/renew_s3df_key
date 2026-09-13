@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+if [[ "$(uname -s)" != "Darwin" ]]; then
+  echo "renew_s3df_key must run on Mona's local Mac." >&2
+  exit 1
+fi
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  cat <<'EOF'
+Usage: renew_s3df_key [--force | --dry-run | --write-config]
+
+Refresh the daily S3DF gateway registration, then verify sdflogin, psbuildrc,
+and sdfiana. Use --force only with Mona's explicit authorization.
+EOF
+  exit 0
+fi
+
+"${script_dir}/s3df-key-refresh.sh" "$@"
+"${script_dir}/verify-s3df-hosts.sh"
