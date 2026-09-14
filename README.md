@@ -1,44 +1,45 @@
-# Mona's Codex Skills
+# agent-skills
 
-This repository is the source of truth for Mona's personal Codex skills. A fresh
-Mac should clone it to `~/codex-skills` and install each skill as a symlink under
-`~/.codex/skills`.
+Mona's personal skills, shared by Claude Code and Codex. One directory per
+skill, each with a `SKILL.md` (frontmatter `name` + `description`) that both
+agents understand. Codex also reads the optional `agents/openai.yaml`.
 
-## Bootstrap Codex Skills On Another Mac
+Clone to `~/agent-skills`. Agents never read this directory directly; they read
+symlinks that `scripts/sync-skills.sh` maintains:
 
-Prerequisites are Git, GitHub SSH access to this private repository, and Codex.
-The SSH workflow additionally needs Node.js 18 or newer, npm, and Google Chrome.
+| Agent       | Install dir         | Points to               |
+|-------------|---------------------|-------------------------|
+| Claude Code | `~/.claude/skills/` | `~/agent-skills/<skill>` |
+| Codex       | `~/.codex/skills/`  | `~/agent-skills/<skill>` |
 
-Do not replace an existing non-symlink skill directory or discard local Git
-changes. Clone the repo if needed, then link every skill:
+## Set up a machine
 
-```bash
-git clone git@github.com:monarin/codex-skills.git "$HOME/codex-skills"
-mkdir -p "$HOME/.codex/skills"
-
-for skill_path in "$HOME/codex-skills"/*; do
-  [ -f "$skill_path/SKILL.md" ] || continue
-  skill_name="$(basename "$skill_path")"
-  target="$HOME/.codex/skills/$skill_name"
-  if [ -e "$target" ] && [ ! -L "$target" ]; then
-    echo "Refusing to replace $target" >&2
-    exit 1
-  fi
-  ln -sfn "$skill_path" "$target"
-done
-```
-
-Restart Codex so skill discovery reloads. Verify that the links point into the
-repo and that Git is clean:
+Prerequisites: Git, GitHub SSH access to this repo, and Claude Code and/or Codex.
 
 ```bash
-find "$HOME/.codex/skills" -maxdepth 1 -mindepth 1 -type l -exec ls -ld {} \; | sort
-git -C "$HOME/codex-skills" status --short --branch
+git clone git@github.com:monarin/codex-skills.git ~/agent-skills
+~/agent-skills/scripts/sync-skills.sh adopt   # only if an agent already created skills locally
+~/agent-skills/scripts/sync-skills.sh link
+~/agent-skills/scripts/sync-skills.sh status
 ```
 
-## Bootstrap SSH Connections
+Restart the agent so it rescans skills. `link` never replaces a real directory;
+`adopt` moves such directories into the repo first and links them back.
 
-Ask Codex to use `$ssh-connections` and follow
+### Migrating an existing `~/codex-skills` checkout
+
+```bash
+mv ~/codex-skills ~/agent-skills
+ln -s ~/agent-skills ~/codex-skills   # optional compatibility link
+~/agent-skills/scripts/sync-skills.sh link
+```
+
+Existing `~/.codex/skills` links are rewritten to the new path and stale ones
+are pruned.
+
+## Bootstrap SSH connections (Mac)
+
+Ask the agent to use the `ssh-connections` skill and follow
 `ssh-connections/references/bootstrap-macos.md`. That workflow contains the
 current non-secret SSH config baseline and setup for:
 
@@ -48,20 +49,31 @@ current non-secret SSH config baseline and setup for:
 - NERSC's one-day `sshproxy` credential for Perlmutter, DTNs, and compute-node
   hops.
 
-Install its pinned browser dependency before the first S3DF refresh:
+It needs Node.js 18 or newer, npm, and Google Chrome. Install its pinned
+browser dependency before the first S3DF refresh:
 
 ```bash
-cd "$HOME/codex-skills/ssh-connections"
+cd ~/agent-skills/ssh-connections
 npm ci
 ```
 
-Private keys, certificates, passwords, OTPs, and browser profiles are deliberately
-excluded. The bootstrap guide explains how to provision them without putting
-secrets in Git.
+Private keys, certificates, passwords, OTPs, and browser profiles are
+deliberately excluded. The bootstrap guide explains how to provision them
+without putting secrets in Git.
 
-## Maintaining Skills
+## Day to day
 
-Edit the repo copy, keep `~/.codex/skills/<name>` symlinked to it, validate
-changed skills with Codex's `quick_validate.py`, and commit and push only the
-intended files. Never commit secrets, tokens, private credentials, or copied
-authentication logs.
+- Edit skills in `~/agent-skills`, commit, push only the intended files.
+- Other machines: `git pull --ff-only` then `sync-skills.sh link`
+  (only needed when skills were added or removed).
+- An agent wrote a new skill into its own dir? `sync-skills.sh adopt` moves it
+  into the repo and links it back.
+- Codex users can validate a changed skill with Codex's `quick_validate.py`.
+- Never commit secrets, tokens, private credentials, or copied authentication
+  logs.
+
+See `skill-management/SKILL.md` for the full workflow the agents follow.
+
+The GitHub repo keeps its original name `codex-skills`; the local checkout is
+`~/agent-skills`, with `~/codex-skills` optionally left as a symlink for
+anything still pointing at the old path.
