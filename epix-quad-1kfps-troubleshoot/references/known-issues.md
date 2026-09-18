@@ -58,33 +58,64 @@ Fix:
   card before DAQ. For LCLS-II checks, use LCLS-II startup/configuration and
   verify `Bypass` returns to `0x0`.
 
-## Frame[2] or 1600-Byte Frame-Size Problem
+## 1600-Byte Image Subframe
 
-Symptoms can include:
+The historical ASC test found that loading
+`epixQuad_ASICs_allAsics_UED_1080Hz_settings.yml` reduced the camera frame
+size to 1600 bytes. Compare the camera
+`Top.RdoutStreamMonitoring.Ch[0].FrameSize` with the DRP's `subframe[2]` size;
+`FrameCnt` increasing does not establish that a full image arrived. Use the
+current approved base/configDB configuration without the old YAML. See the
+[1600-byte guide](https://github.com/monarin/psana-nersc/blob/master/psdaq/instructions/epix10ka/troubleshooting/12_troubleshoot_1600_byte_frame.md).
 
-```text
-Missing data: subframe[2] size 0
-Missing data: subframe[2] size 1600
-Frame[2] only seeing 1600 bytes
-```
+Do not use `epixQuadLoadFpga.py` as a routine frame-size reset. Readable 2025
+versions require `--mcs`, program the Quad PROM with that image, then reload
+the FPGA. Verify the deployed script and exact approved Quad image before any
+firmware operation; a KCU1500 `.mcs` is a different device.
 
-Known causes and checks:
+## Zero-Byte Image Subframe (Open)
 
-- Old/manual camera YAML can reduce the frame size to 1600 bytes. Avoid loading
-  deprecated UED ASIC YAML such as
-  `epixQuad_ASICs_allAsics_UED_1080Hz_settings.yml` unless the current detector
-  owner explicitly requests it.
-- Check camera GUI `FrameCnt`, `FrameRate`, and frame-size-related counters before
-  attributing this to DAQ or timing.
+Symptom: `Missing data: subframe[2] size 0`. A camera `FrameSize=0` is a
+separate stream-monitor reading; if `FrameCnt` is not advancing, it may mean
+no complete frame has been measured. A 2026-09-17 UED DRP launch logged ADC
+test failure/timeout before repeated empty image subframes after Enable.
+`epixquad1kfps_config.py` calls `_checkADCs()` but does not use its return
+value, so Configure can continue after that timeout. The root cause and a
+reliable fix remain unknown.
 
-Known fix from operations:
+- Compare matched DRP/control/TEB logs, camera `FrameSize` and ADC/readout
+  status, KCU EventBuilder counters, and the timing receiver.
+- UED operators report `ued_seq --a360` on `ued-daq` as the Quad 360 Hz
+  sequence command. Verify the installed wrapper and selected XPM sequence;
+  the checked-in `lcls2` source does not define this exact command. The Andor
+  1 Hz sequence is unsuitable for a 360 Hz Quad test.
+- The Quad's continuous run trigger and DAQ/readout trigger are separate in
+  this configuration. Check both rates and partition settings. A controlled
+  Quad restart is another hypothesis, not a confirmed cure; after one, watch
+  for a new `AsicMask` or ADC startup failure.
 
-```bash
-python epix-quad-1kfps/software/scripts/epixQuadLoadFpga.py --type datadev --dev /dev/datadev_0 --l <lane>
-```
+See the [zero-byte guide](https://github.com/monarin/psana-nersc/blob/master/psdaq/instructions/epix10ka/troubleshooting/13_troubleshoot_zero_byte_image.md).
 
-Use the actual lane from the current config/logs. Do not run firmware-load
-commands on live hardware without explicit approval.
+## AsicMask Configure Verification Failure
+
+The 2026-09-17 UED log shows `Setting cbase.SystemRegs.AsicMask to 65535`,
+then PyRogue verification at `0x00100028` reports byte 0 `Got: 0x00, Exp:
+0xff`. The ConfigDb template stores `0xffff`; `config_expert()` calls
+`apply_dict()` and `.set()` even in successful launches, so an already-correct
+mask does not cause an explicit DAQ skip.
+
+The readable 2025 PyRogue model marks `AsicMask` RW and says MicroBlaze
+ASIC auto-detect sets it. The corresponding `SystemRegs.vhd` uses a write
+shadow at offset `0x028`: it updates the effective 16-bit mask only when the
+written word's upper 16 bits equal `0xAAAA`. Thus `0x0000FFFF` can be ignored
+while the readback remains zero. `0xAAAAFFFF` is the keyed word for all 16
+ASICs, but normal PyRogue verification may reject that 32-bit write because
+readback exposes only the effective 16-bit mask. Confirm the deployed RTL and
+Dan's exact devGui action before using or recommending a register write. A
+key-aware write with effective-mask readback is a code-fix candidate, not a
+verified live fix.
+
+See the [AsicMask guide](https://github.com/monarin/psana-nersc/blob/master/psdaq/instructions/epix10ka/troubleshooting/14_troubleshoot_asicmask_configure.md).
 
 ## ADC Calibration GitHash Mismatch
 
@@ -161,8 +192,12 @@ Changing kernel modules, KCU services, or firmware is not read-only; ask first.
   For config Python, avoid opening data VCs while DRP owns them.
 - `Missing data: subframe count 3 [expected 4]`: check `EventBuilder.Bypass` for
   `0x4`; fix to `0x0`.
-- `subframe[2] size 0` or `1600`: check for old YAML/frame-size issue; known
-  recovery is `epixQuadLoadFpga.py` with the correct lane.
+- `subframe[2] size 1600`: check for the old camera YAML and compare camera
+  `FrameSize` with the DRP size; restore the approved base configuration.
+- `subframe[2] size 0`: open issue; compare ADC/readout and UED timing,
+  including the Quad 360 Hz sequence versus the Andor 1 Hz sequence.
+- `AsicMask` verify error at `0x00100028`: compare current mask and deployed
+  RTL write-key behavior before any register or configDB change.
 - IOC EDM registers read zero or detector powers off: suspect IOC/firmware/VC3
   communication or interlock behavior. Do not bypass interlocks; coordinate with
   detector/controls owners.
