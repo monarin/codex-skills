@@ -1,6 +1,6 @@
 ---
 name: epix-quad-1kfps-troubleshoot
-description: Use with daq-troubleshoot when diagnosing UED ePix Quad/ePixQuad1kfps detector DAQ issues, including epixquad1kfps DRP logs, epixQuadDAQ, FPGA devGui, EventBuilder.Bypass 0x4, missing subframes, Frame[2] or 1600-byte frame-size problems, ADC calibration mismatch, trigger-delay/start_ns issues, PGP/PCIe firmware checks, and epixquad1kfps_config.py behavior.
+description: Use with daq-troubleshoot when diagnosing UED ePix Quad/ePixQuad1kfps detector DAQ issues, including epixquad1kfps DRP logs, epixQuadDAQ, FPGA devGui, EventBuilder.Bypass 0x4, missing subframes, zero/1600-byte image subframes, AsicMask Configure errors, ADC calibration mismatch, UED timing sequence issues, trigger-delay/start_ns, and PGP/PCIe firmware checks.
 ---
 
 # ePix Quad 1kfps Troubleshoot
@@ -18,10 +18,10 @@ adds only ePixQuad1kfps-specific checks and known failure modes.
 - Check runtime code paths in `daqlog_header` before assuming a deployment:
   typical deployed files include `psdaq/psdaq/configdb/epixquad1kfps_config.py`,
   `psdaq/drp/EpixQuad.cc`, and submodules under
-  `/cds/sw/ds/ana/conda2/rel/lcls2_submodules_*`.
+  `/sdf/group/lcls/ds/ana/sw/conda2-v4/rel/lcls2_submodules_*` or older `/cds/sw/ds/ana/conda2/rel/lcls2_submodules_*`.
 - Read `references/known-issues.md` when log symptoms include missing subframes,
-  `EventBuilder.Bypass`, 1600-byte frames, ADC calibration mismatch, trigger
-  delay errors, firmware version mismatch, or IOC/MPOD interlock behavior.
+  `EventBuilder.Bypass`, zero/1600-byte frames, `AsicMask` verification,
+  UED 360 Hz timing, ADC calibration, firmware mismatch, or IOC/MPOD behavior.
 
 ## Safety
 
