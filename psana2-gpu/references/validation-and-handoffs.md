@@ -120,7 +120,10 @@ For a performance change:
 5. Capture loop time, stage timing, memory high-water, and NIC traffic.
 6. Run enough events to reduce startup/cache effects.
 7. Separate load time from event-loop time.
-8. Save commands and logs with the report.
+8. Keep generated logs and artifacts on scratch using the
+   [shared storage guidance](../../gpu-cuda-python/references/scratch-storage.md).
+   Save commands, a concise results summary, provenance, and artifact locations
+   in the repository report; preserve essential evidence before scratch expires.
 
 ## Handoff Template
 

@@ -11,6 +11,14 @@ Use this skill for Python GPU tasks where correctness or performance depends on
 CUDA stream ordering, async memory copies, pinned memory, kernel launch shape, or
 Nsight Systems timelines.
 
+## Sweep And Test Storage
+
+For sweeps, profiling, and auxiliary test builds, use scratch for generated
+results, artifacts, intermediates, and frozen runtime copies. Keep maintained
+scripts and concise findings in the repository. Before preparing a run, read
+[Scratch storage](references/scratch-storage.md) for paths, output routing,
+and preservation of evidence.
+
 ## Workflow
 
 1. Confirm the active Python/CuPy environment when exact behavior matters:

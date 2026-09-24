@@ -96,6 +96,14 @@ psana/psana/psexp/run.py
 Do not reintroduce deleted standalone pipeline modules, `StreamPool`, or
 `GPUKernelRegistry` merely because old notes, logs, or bytecode mention them.
 
+## Sweep And Test Storage
+
+Place generated sweep results, profiling artifacts, intermediates, auxiliary
+builds, and frozen test installations on scratch by default, including when
+the source checkout is in home. Keep maintained scripts and concise findings
+in the repository. Before preparing a run, read the shared
+[Scratch storage guidance](../gpu-cuda-python/references/scratch-storage.md).
+
 ## Engineering Workflow
 
 1. State whether behavior is implemented, proposed, or measured.
