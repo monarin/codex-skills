@@ -23,6 +23,13 @@ adds only ePixQuad1kfps-specific checks and known failure modes.
   `EventBuilder.Bypass`, zero/1600-byte frames, `AsicMask` verification,
   UED 360 Hz timing, ADC calibration, firmware mismatch, or IOC/MPOD behavior.
 
+## Standalone Software Bundles
+
+For UED standalone test-bundle preparation or post-test production promotion,
+read [references/submodule-bundles.md](references/submodule-bundles.md). It records
+Mona's requirement to upstream the validated superproject pins and patch recipe
+after tests pass, plus naming and reproducibility details.
+
 ## Safety
 
 - Treat UED detector, MPOD, IOC, Slurm, DAQ, firmware loading, and register writes
