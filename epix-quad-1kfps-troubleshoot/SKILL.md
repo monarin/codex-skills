@@ -1,6 +1,6 @@
 ---
 name: epix-quad-1kfps-troubleshoot
-description: Use with daq-troubleshoot when diagnosing UED ePix Quad/ePixQuad1kfps detector DAQ issues, including epixquad1kfps DRP logs, epixQuadDAQ, FPGA devGui, EventBuilder.Bypass 0x4, missing subframes, zero/1600-byte image subframes, AsicMask Configure errors, ADC calibration mismatch, UED timing sequence issues, trigger-delay/start_ns, and PGP/PCIe firmware checks.
+description: Use with daq-troubleshoot when diagnosing UED ePix Quad/ePixQuad1kfps detector DAQ issues, including epixquad1kfps DRP logs, epixQuadDAQ, FPGA devGui, EventBuilder.Bypass 0x4, missing subframes, zero/1600-byte image subframes, AsicMask Configure errors, ADC calibration mismatch, UED timing sequence issues, trigger-delay/start_ns, PGP/PCIe firmware checks, gain-map FP/FN, IsEn ordering, ASIC pixel-memory readback, and standalone versus full-DAQ comparisons.
 ---
 
 # ePix Quad 1kfps Troubleshoot
@@ -29,6 +29,14 @@ For UED standalone test-bundle preparation or post-test production promotion,
 read [references/submodule-bundles.md](references/submodule-bundles.md). It records
 Mona's requirement to upstream the validated superproject pins and patch recipe
 after tests pass, plus naming and reproducibility details.
+
+## Gain-map programming and repeat tests
+
+For gain-map FP/FN, standalone versus DAQ differences, IsEn programming order,
+ASIC SRAM readback, DMA/pre-write/disk comparisons, or replaying the September
+2026 tests, read [references/gain-map-programming.md](references/gain-map-programming.md).
+It identifies both host profiles, retained tools, the shared run archive, the
+verified 360 Hz wrapper and the limits of the tested correction.
 
 ## Safety
 

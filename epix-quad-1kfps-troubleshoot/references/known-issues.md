@@ -85,10 +85,11 @@ reliable fix remain unknown.
 
 - Compare matched DRP/control/TEB logs, camera `FrameSize` and ADC/readout
   status, KCU EventBuilder counters, and the timing receiver.
-- UED operators report `ued_seq --a360` on `ued-daq` as the Quad 360 Hz
-  sequence command. Verify the installed wrapper and selected XPM sequence;
-  the checked-in `lcls2` source does not define this exact command. The Andor
-  1 Hz sequence is unsuitable for a 360 Hz Quad test.
+- On September 30, 2026 the installed UED wrapper was verified to select
+  360 Hz by default and to have **no `--a360` option**. Use the preview and
+  operator-environment procedure in [gain-map programming](gain-map-programming.md#ued-timing-and-readout-clock).
+  Verify the installed wrapper before applying timing. The Andor 1 Hz sequence
+  is unsuitable for a 360 Hz Quad test.
 - The Quad's continuous run trigger and DAQ/readout trigger are separate in
   this configuration. Check both rates and partition settings. A controlled
   Quad restart is another hypothesis, not a confirmed cure; after one, watch
@@ -201,3 +202,11 @@ Changing kernel modules, KCU services, or firmware is not read-only; ask first.
 - IOC EDM registers read zero or detector powers off: suspect IOC/firmware/VC3
   communication or interlock behavior. Do not bypass interlocks; coordinate with
   detector/controls owners.
+
+## Extra FL pixels after gain-map Configure
+
+Correct ConfigDB/Configure metadata does not establish correct ASIC SRAM.
+The September 2026 production test isolated an IsEn ordering defect: expert
+application reset IsEn to 0 before map writes. Reasserting True immediately
+before programming removed the extra 43–44 FPs. See [the full evidence and
+repeat workflow](gain-map-programming.md).

@@ -19,6 +19,12 @@ working bundle. Do not consider a private directory alone a finished release.
   Read `UED_SUBMODULE_BUNDLE_PLAN.md` and the preparation result before resuming.
   Preparation and software checks are not production hardware acceptance.
 
+The tested local superproject commit is
+`4a28be03a7aa77373f0795dae7a1e0d003d4bc3c`. Production-module run 8
+validated this bundle with the minimal IsEn fix (1,084 frames, zero FP/FN
+outside known-bad). This does not imply upstream publication or production
+promotion is complete. See [gain-map evidence](gain-map-programming.md).
+
 ## Reproducibility and naming
 
 The observed SDF release-directory convention is `lcls2_submodules_MMDDYYYY`.
