@@ -1,6 +1,6 @@
 ---
 name: daq-troubleshoot
-description: Use when troubleshooting LCLS DAQ hutch operations on production hutch DAQ nodes, including daqmgr/daqstat restart issues, Slurm job launch failures, CPU binding/environment leaks, DAQ process logs, TPR/XPM timing trigger routing for hutch cameras, EPICS CA/PVA camera PV discovery or drp_pva damage, and hutch operator account context for tmo, fix, txi, ued, mfx, or xpp.
+description: Use when troubleshooting LCLS DAQ hutch operations on production hutch DAQ nodes, including SDF-to-DAQ SSH access, read-only ConfigDB access with Kerberos failures, daqmgr/daqstat restart issues, Slurm job launch failures, CPU binding/environment leaks, DAQ process logs, TPR/XPM timing trigger routing for hutch cameras, EPICS CA/PVA camera PV discovery or drp_pva damage, and hutch operator account context for tmo, fix, txi, ued, mfx, or xpp.
 ---
 
 # DAQ Troubleshoot
@@ -16,7 +16,14 @@ These are real experiment hutch operator accounts. Treat them as production syst
 
 ## Hutch Access
 
-Hutch DAQ hosts follow:
+When starting from sdfiana, use the `ssh-connections` skill's
+[DAQ access reference](../ssh-connections/references/sdf-daq-kerberos.md).
+Use ProxyJump via `psbuild-rocky9-01` for Mona's personal account; for a hutch
+operator account, execute the second SSH on psbuild so it uses psbuild's
+Kerberos cache and can contact the PCDSN KDC. Direct connections from sdfiana
+can fail at DNS/network level despite a valid ticket.
+
+From a host with DAQ network access, hutch DAQ hosts follow:
 
 ```bash
 ssh <hutch>-daq -l <hutch>opr
@@ -34,6 +41,13 @@ ssh mfx-daq -l mfxopr 'ls -lt "$HOME"/daq/logs/*/* 2>/dev/null | head'
 Rocky 9 hutches have home/log files under `/sdf`; RHEL7 hutches have files under `/cds`. Always confirm with `echo "$HOME"` and `cat /etc/os-release` instead of hard-coding paths.
 
 For more path and command notes, see `references/hutch-nodes.md`.
+
+## Read-Only Database Access
+
+For ConfigDB queries failing on Kerberos or HTTP authentication, read
+[references/read-only-configdb.md](references/read-only-configdb.md).
+The supported `/ws/` read endpoint can avoid an unnecessary authentication
+requirement; do not change live DAQ connection settings to perform inspection.
 
 ## Detector-Specific Overlays
 

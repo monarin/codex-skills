@@ -1,6 +1,6 @@
 ---
 name: ssh-connections
-description: Manage and bootstrap Mona's macOS SSH configuration and access for SLAC S3DF (sdflogin, sdfiana, psbuildrc, and downstream hosts) and NERSC Perlmutter (sshproxy, DTNs, and compute-node hops). Use for connection setup, daily credential renewal, config changes, verification, or troubleshooting; use narrower host-specific skills for remote workload issues after SSH succeeds.
+description: Manage and bootstrap Mona's macOS SSH configuration and access for SLAC S3DF (sdflogin, sdfiana, psbuildrc, and downstream hosts) and NERSC Perlmutter (sshproxy, DTNs, and compute-node hops). Use for connection setup, daily credential renewal, host-local Kerberos tickets, DAQ SSH routing from SDF, config changes, verification, or troubleshooting; use narrower host-specific skills for remote workload issues after SSH succeeds.
 ---
 
 # SSH Connections
@@ -31,6 +31,16 @@ never belong in this repository.
 - Keep normal host-key checking. The existing `nid??????` exception is limited
   to ephemeral Perlmutter compute nodes and matches NERSC's documented VS Code
   setup; do not broaden it.
+
+## SDF, DAQ, And Kerberos
+
+For work already running on sdfiana or psbuild, read
+[references/sdf-daq-kerberos.md](references/sdf-daq-kerberos.md).
+It covers host-local tickets, the `krb` helper, personal-account ProxyJump,
+and operator-account SSH executed on psbuild. The Mac renewal guardrail above
+applies to Mac SSH credentials, not ordinary Linux Kerberos ticket inspection.
+For ConfigDB read failures, use the read-only endpoint guidance in the
+`daq-troubleshoot` skill before treating the failure as an SSH/ticket problem.
 
 ## Bootstrap A Mac
 

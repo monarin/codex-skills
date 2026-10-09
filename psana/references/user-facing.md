@@ -11,6 +11,7 @@
 - Shared memory and live mode
 - Timestamp jumps
 - Integrating detectors
+- Read-only calibration database access
 - Verification habits
 
 ## Entry Points
@@ -175,3 +176,41 @@ For code changes, choose focused tests:
 - MPI helper behavior: inspect `psana/psana/tests/byhand_mpi.py` and `byhand_run_steps.py`; these run `mpirun` subprocesses and may need the psana environment.
 - Shared-memory behavior: `test_shmem.py`, `test_shmem_w_supervisor.py`, and `test_calib_prefetch_cache_shmem.py` may be platform/environment-sensitive.
 - Integrating detector behavior: `python psana/psana/tests/run_intg_det.py` or the `byhand_mpi.py` path that launches it.
+
+## Read-Only Calibration Database Access
+
+For calibration reads blocked by Kerberos, inspect the actual imported client
+and selected endpoint before requesting a new ticket. In the checkout inspected
+on 2026-10-09, `psana/psana/pscalib/calib/CalibConstants.py` defines:
+
+- `cc.URL`: public read endpoint, normally
+  `https://pswww.slac.stanford.edu/ws/calib_ws/`.
+- `cc.URL_KRB`: authenticated endpoint for writes; do not use it for a public read.
+- `LCLS_CALIB_HTTP`: overrides the base URL; inspect it when the selected service
+  differs from expectations. Preserve production/development selection.
+
+`MDBWebUtils.get()` uses plain requests for `/ws/calib_ws` and `/calib_ws`
+paths, without Kerberos headers or JWT sessions. `CalibConstants` also delays
+legacy `KRBHEADERS` creation until it is requested. Installed releases can
+predate these changes: inspect module `__file__` paths and the installed source.
+Do not assume editing the checkout updates the imported installation.
+
+An unauthenticated GET to the production read endpoint returned HTTP 200 and
+JSON on 2026-10-09 from sdfiana. For a current transport check:
+
+```bash
+curl -q --fail --silent --show-error --max-time 15 \
+  https://pswww.slac.stanford.edu/ws/calib_ws/
+```
+
+Use `MDBWebUtils` read methods with `url=cc.URL` for structured queries. If an
+older client fails before sending a public read because it eagerly constructs
+Kerberos headers, use the supported unauthenticated HTTP read path for immediate
+inspection, or fix/select the client under the current task's authorization.
+A successful root listing verifies service access, not a specific detector's
+constants. Do not disable TLS verification, fabricate auth headers, or apply
+this approach to protected reads or writes. Separate HTTP errors from client-side
+Kerberos failures and DNS/network restrictions.
+
+For host-local ticket management, see the `ssh-connections` skill's
+[Kerberos reference](../../ssh-connections/references/sdf-daq-kerberos.md).
