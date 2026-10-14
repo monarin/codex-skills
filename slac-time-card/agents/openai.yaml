@@ -1,0 +1,4 @@
+interface:
+  display_name: "SLAC Time Card"
+  short_description: "Fill SLAC Sequoia time cards safely"
+  default_prompt: "Use $slac-time-card to fill my requested Sequoia time-card period from the saved FY27 guide without submitting."
