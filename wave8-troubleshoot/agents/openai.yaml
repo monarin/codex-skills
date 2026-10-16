@@ -1,0 +1,4 @@
+interface:
+  display_name: "Wave8 / FIM Troubleshoot"
+  short_description: "Wave8 timing, PGP monitoring, and IOC recovery"
+  default_prompt: "Use $wave8-troubleshoot with daq-troubleshoot to diagnose a Wave8/FIM issue, verify PGP monitor compatibility, or plan safe IOC recovery after devGui use."

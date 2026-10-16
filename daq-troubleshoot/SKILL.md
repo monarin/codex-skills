@@ -57,6 +57,12 @@ or aliases. Apply the detector skill after Step 0 log discovery to interpret
 detector-specific logs, config paths, firmware state, and known failure modes.
 Do not let detector-specific guidance override production safety rules.
 
+For Wave8/FIM, use the
+[wave8-troubleshoot skill](../wave8-troubleshoot/SKILL.md). It distinguishes
+direct Wave8 front-end timing and `pgp-pcie-apps` from the KCU-timed
+`lcls2-pgp-pcie-apps` application, records PGP monitor/Rogue compatibility, and
+covers front-end devGui side effects and IOC-managed DAQ setup recovery.
+
 ## Priority Troubleshooting Order
 
 Use this order unless the user explicitly asks for a narrower check.
