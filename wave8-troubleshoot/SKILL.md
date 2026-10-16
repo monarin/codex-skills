@@ -25,6 +25,12 @@ describes which application this deployment uses.
 The separate `~/wave8` (`slaclab/wave8`) contains Wave8 front-end Rogue software.
 Compatibility of the PGP monitor does not establish compatibility of wave8DAQ.
 
+For Mona's Wave8 PGP monitor, retain the hardware-tested `pgp-pcie-apps` commit
+`7d44084` (`v2.5.0-9-g7d44084`) and its recorded submodules with Rogue 6.1.3.
+Mona confirmed it works with the v2.5.0 KCU firmware on `drp-srcf-cmp004`.
+See the PGP reference for full hashes and evidence; this supersedes the earlier
+choice of cpo's newer `ac36573` checkout.
+
 ## Select The Investigation
 
 - For `PgpMonitor.py`, `runPyDM(root=...)`, Rogue versions, cloning/submodules,

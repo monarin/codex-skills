@@ -1,28 +1,47 @@
 # Wave8 PGP Monitor And KCU Firmware
 
-## Recorded Software Selection (2026-10-16)
+## Preferred Hardware-Tested Software (2026-10-16)
 
 - Mona used `source ~tmoopr/daq/scripts/setup_env.sh`, selecting
   `daq_20250402_r9`, with reported Rogue/PyRogue **6.1.3**. Setup scripts can
   change; verify imports in the launch shell.
 - Repository: [slaclab/pgp-pcie-apps](https://github.com/slaclab/pgp-pcie-apps).
-- Mona chose cpo's working checkout at
-  **`ac36573ea8bf42556869346f5b79389c96dfcb19`**, rather than a release tag.
-- It includes `7d440848f3c80be6cba1357deaf91047ff04be8a`, “upgrading to rogue v6”.
+- Mona tested and chose **`7d440848f3c80be6cba1357deaf91047ff04be8a`**,
+  “upgrading to rogue v6”, described by Git as **`v2.5.0-9-g7d44084`**.
+  Keep this version and its pinned submodules for this deployment; do not
+  automatically advance to cpo's newer checkout or a newer release.
   No tag points directly to the fix; `v2.6.0` is the earliest containing release
   in the inspected tag set. `v2.5.0` lacks it.
 - Recorded submodules at the chosen commit:
 
 | Submodule | Commit |
 | --- | --- |
-| axi-pcie-core | `e6d5f785a7ad1ded92f0906e59f6edebad0eb3b7` |
-| ruckus | `db3e562fad12f501b649684001919d4aa3b68de6` |
-| surf | `ce66ccf99b8f265acfe7947aeb83c9dea1b26640` |
+| axi-pcie-core | `2b99fccc0152fe222b7657c316ebb025fe9811f6` (`v4.0.1`) |
+| ruckus | `d9d27b430b027a586ebacbd497ce8fa5939d8694` (`4.11.0-4-gd9d27b4`) |
+| surf | `6995288721d022a8525448e7cc240ae8f638a0be` (`v2.47.2`) |
 
-Mona reported cpo's checkout worked on hardware. The replacement
-`~/pgp-pcie-apps` matched his monitor byte-for-byte, passed syntax/API checks,
-and had clean/pinned submodules. It was not launched against hardware during
-verification. These commits describe software, not firmware loaded on a card.
+After switching `~/pgp-pcie-apps` and updating its submodules, syntax/API checks
+passed and the working tree was clean. Mona then ran the monitor on the hardware
+and confirmed it works. This is operator-confirmed monitor operation, not a
+claim that every DAQ mode or firmware combination was tested.
+
+The earlier comparison used cpo's `ac36573` (`v3.4.0-7-gac36573`). That checkout
+is superseded by the tested choice above so the software stays closer to the
+installed firmware while retaining the Rogue 6 fix.
+
+Read-only `cat /proc/datadev_0` on `drp-srcf-cmp004` reported:
+
+| Field | Observed value |
+| --- | --- |
+| Firmware version | `0x2050000` (v2.5.0) |
+| Firmware Git hash | `3e991ffef660bd16cc1789b8c89418698521d62f`, exactly tagged `v2.5.0` |
+| Build target | `XilinxKcu1500Pgp4_6Gbps` |
+| Build date | 2024-02-15, Vivado v2023.1 |
+| PCIe address | `0000:41:00.0` |
+
+The selected software is nine commits after the installed firmware's source
+revision. These are separate software and firmware versions; no firmware update
+was performed. Re-read `/proc/datadev_0` when diagnosing a later deployment.
 
 ## Launch On The Wave8 Data Node
 
@@ -55,7 +74,8 @@ self.addInterface(self.zmqServer)
 ```
 
 It calls `pyrogue.pydm.runPyDM(serverList=root.zmqServer.address)`. Both changes
-are needed. cpo's five-second root timeout is separate from the keyword error.
+are needed. The five-second root timeout in cpo's newer checkout is separate
+from the keyword error and is not part of the selected `7d44084` monitor.
 Inspect the actual imported API without opening a device:
 
 ```bash
@@ -80,7 +100,7 @@ For a new destination (do not overwrite local work):
 export GIT_LFS_SKIP_SMUDGE=1
 git clone --recursive https://github.com/slaclab/pgp-pcie-apps.git ~/pgp-pcie-apps
 cd ~/pgp-pcie-apps
-git checkout --detach ac36573ea8bf42556869346f5b79389c96dfcb19
+git checkout --detach 7d440848f3c80be6cba1357deaf91047ff04be8a
 git submodule sync --recursive
 git submodule update --init --recursive
 git status --short
@@ -94,9 +114,10 @@ a required filter. On the inspected SDF environment it was in the DAQ conda
 environment's `bin`, but not the default shell PATH.
 
 `GIT_LFS_SKIP_SMUDGE=1` leaves LFS pointers in place during checkout. It neither
-removes downloaded objects nor shrinks ordinary Git history. The replacement
-measured **559 MiB old / 563 MiB new**, with about 504 MiB in `.git` and no
-downloaded LFS objects. Do not promise space savings. Obtain required firmware
+removes downloaded objects nor shrinks ordinary Git history. The initial
+replacement at `ac36573` measured **559 MiB old / 563 MiB new**, with about
+504 MiB in `.git` and no downloaded LFS objects; that measurement preceded the
+switch to `7d44084`. Do not promise space savings. Obtain required firmware
 images separately; an LFS pointer is not an image.
 
 ## Firmware Is Separate From GUI Compatibility
@@ -115,8 +136,9 @@ chosen commit. The inspected updater is:
 firmware/submodules/axi-pcie-core/scripts/updatePcieFpga
 ```
 
-Its parser supports `--path`, `--package`, and `--dev`; PCIe rescan defaults to
-enabled and may require root. Inspect source and the deployment procedure before
-proposing a programming command. Firmware programming/reload and PCIe rescan
-can interrupt acquisition and require operation-specific authorization.
-No firmware was programmed or checked on the card in this investigation.
+At the selected submodule revision its parser supports `--path`, `--package`,
+and `--dev`; it does not have the newer updater's `--rescan` option. Inspect
+source and the deployment procedure before proposing a programming command.
+Firmware programming/reload and any separate PCIe rescan can interrupt
+acquisition and require operation-specific authorization. Firmware identity was
+read from `/proc/datadev_0`; no firmware was programmed in this investigation.
